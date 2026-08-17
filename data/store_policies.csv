@@ -1,0 +1,23 @@
+policy_type,description,conditions,timeframe
+returns,"Laptop Return Policy","Laptop must be in unopened or like-new condition|All original accessories and documentation must be included|Original packaging must be intact|Return label requested via online account",14
+returns,"Smartphone Return Policy","Device must be free from cracks or water damage|Factory reset is mandatory|Original charger and box must be included|Return label requested via online account",14
+returns,"Smart TV Return Policy","TV must be in original packaging|Remote and cables included|No visible screen damage|Request return via online account",30
+returns,"Speaker Return Policy","Speaker must show no physical damage|Original packaging or near-new condition|Return label requested via online account",15
+warranty,"Standard Laptop Warranty","Online order confirmation required|Covers manufacturing defects in hardware|Excludes accidental damage and normal wear",365
+warranty,"Extended Laptop Warranty with Accidental Protection","Must be purchased within 30 days of laptop order|Covers drops, spills, and physical damage|Mail-in or on-site service (where available)",730
+warranty,"Standard Smartphone Warranty","Proof of purchase from online account|Covers manufacturing defects and software issues|Excludes water damage",365
+warranty,"Speaker Warranty","Online account proof of purchase|Covers audio distortions and internal failures|Excludes damage from mishandling",180
+shipping,"Free Standard Shipping Over $50","Order subtotal must be at least $50 before taxes|Eligible for contiguous U.S. addresses only|Excludes large TVs over 50 inches|Orders under $50 pay standard rates",0
+shipping,"Overnight Shipping Policy","Eligible for items under 5 lbs|Excludes major holiday dates|Paid overnight fee required|Delivery limited to contiguous U.S.",0
+price_matching,"Basic Price Match Guarantee","Competitor must be an authorized retailer|Request must be made at time of purchase|Identical model/UPC required|Excludes clearance or special promo prices",0
+price_matching,"Online Price Match (Major Retailers)","Must show current online price|Product must be in stock|Cannot be combined with coupon codes|Valid for Amazon, Best Buy, Walmart, Target",0
+price_matching,"Post-Purchase Price Protection","Must request within 14 days of order|Proof of lower price required|One adjustment per item|Online order confirmation needed",0
+exchanges,"Standard Exchange Policy","Proof of purchase from online account|Product must be in resalable condition|Original packaging and accessories required|Exchange limited to same product category",30
+exchanges,"Smartphone Exchange for Different Model","Phone must be undamaged|Device factory reset required|Within 30 days of delivery|Customer pays price difference if upgrading",30
+repairs,"Standard Out-of-Warranty Repair","$49 diagnostic fee applies|Customer approval required before repair|Device must be unlocked or passcode removed|Mail-in to authorized repair center",0
+repairs,"Smartphone Screen Replacement","Genuine or OEM parts used|Data backup recommended|No additional damage beyond screen|Mail-in or authorized service center only",0
+repairs,"Smart TV Repair Service","Available for TVs 43 inches or larger|Remote diagnostic attempt first|Shipping or limited in-home service (if offered)|Customer schedules via online account",0
+financing,"12-Month No Interest Financing","Available on purchases over $299|Minimum monthly payment required|Interest accrues if not paid in full by end of term|Credit approval required",0
+financing,"24-Month Financing on Premium Electronics","Purchases over $999|Equal monthly payments required|Auto-pay enrollment recommended|No early payoff penalty",0
+preorder,"Standard Preorder Policy","20% deposit required to reserve|Non-refundable after 48 hours|Remaining balance due at shipping|Unclaimed orders canceled after 7 days",0
+preorder,"Guaranteed Launch Day Delivery","Full payment required at preorder|Must be within contiguous U.S.|Order at least 7 days before release|Address changes not allowed post-confirmation",0
