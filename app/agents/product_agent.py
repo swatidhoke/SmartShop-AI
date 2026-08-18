@@ -1,39 +1,53 @@
 from langchain_core.messages import HumanMessage
 
 from app.config.config import llm
-from app.data_loader import load_products
+from app.database.db import get_connection
 from app.state.smartshop_state import SmartShopState
 
+
 def product_agent(state: SmartShopState) -> dict:
-    """
-    Product agent recommends products using products.csv.
-    """
+
+    print("🛍️ Product Agent received state:", state)
 
     query = state["query"]
 
-    products_df = load_products()
+    # Read products from PostgreSQL
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
 
-    product_data = products_df.to_csv(index=False)
+            cursor.execute(
+                """
+                SELECT id, name, brand, category,
+                       price, description, stock, rating
+                FROM products
+                LIMIT 50
+                """
+            )
 
+            products = cursor.fetchall()
+
+    if not products:
+        return {
+            "product_response": "No products were found."
+        }
+
+    # Send database results to LLM
     prompt = f"""
 You are the Product Recommendation Agent for SmartShop AI.
 
-Your responsibility is to recommend products using ONLY the provided
-product catalog.
-
-Customer query:
+Customer question:
 {query}
 
-Product catalog:
-{product_data}
+Products from PostgreSQL:
+{products}
 
 Instructions:
-- Recommend the most relevant products.
+- Recommend only products from the data above.
 - Do not invent products.
-- Use information available in the product catalog.
-- Give a short explanation for each recommendation.
-- Mention product name, category, brand and price when available.
-- Return a concise customer-friendly response.
+- Recommend the most relevant products.
+- Mention product name, brand, category and price.
+- Consider rating and stock when useful.
+- Keep the answer short and customer friendly.
 """
 
     response = llm.invoke(

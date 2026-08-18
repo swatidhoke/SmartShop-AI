@@ -1,36 +1,52 @@
 from langchain_core.messages import HumanMessage
-
 from app.config.config import llm
-from app.data_loader import load_products
+from app.database.db import get_connection
 from app.state.smartshop_state import SmartShopState
 
 def price_agent(state: SmartShopState) -> dict:
-    """
-    Compare product prices using products.csv.
-    """
+
+    print("💰 Price Agent received state:", state)
 
     query = state["query"]
 
-    products_df = load_products()
+    # Read products from PostgreSQL
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
 
-    product_data = products_df.to_csv(index=False)
+            cursor.execute(
+                """
+                SELECT id, name, brand, category,
+                       price, stock, rating
+                FROM products
+                LIMIT 50
+                """
+            )
 
+            products = cursor.fetchall()
+
+    if not products:
+        return {
+            "price_response": "No product pricing information was found."
+        }
+
+    # Send database results to LLM
     prompt = f"""
 You are the Price Comparison Agent for SmartShop AI.
 
-Customer query:
+Customer question:
 {query}
 
-Available products:
-{product_data}
+Available products from PostgreSQL:
+{products}
 
-Your responsibilities:
-- Compare relevant product prices.
+Instructions:
+- Compare only products from the data above.
 - Respect the customer's budget when provided.
-- Identify cheaper and more expensive alternatives.
+- Identify cheaper and more expensive options.
 - Do not invent prices.
-- Only use the supplied product data.
-- Clearly explain which product offers better value.
+- Mention product name, brand and price.
+- Explain which product offers better value.
+- Keep the response short and clear.
 """
 
     response = llm.invoke(

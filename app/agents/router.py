@@ -40,14 +40,19 @@ def route_query(state: SmartShopState) -> dict:
     ]
 
     faq_keywords = [
-        "return",
-        "refund",
-        "shipping",
-        "policy",
-        "exchange",
-        "delivery",
-        "warranty",
-    ]
+    "return",
+    "refund",
+    "shipping",
+    "policy",
+    "exchange",
+    "delivery",
+    "warranty",
+    "repair",
+    "financing",
+    "finance",
+    "preorder",
+    "price match",
+]
 
     if any(word in query for word in product_keywords):
         selected_agents.append("product_agent")
