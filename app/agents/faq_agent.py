@@ -1,3 +1,4 @@
+from typing import Any
 from langchain_core.messages import HumanMessage
 
 from app.config.config import llm
@@ -5,11 +6,15 @@ from app.database.db import get_connection
 from app.state.smartshop_state import SmartShopState
 
 
-def faq_agent(state: SmartShopState) -> dict:
+def faq_agent(state: Any) -> dict:
+
+    # Accept dict or SmartShopState
+    if isinstance(state, dict):
+        state = SmartShopState(**state)
 
     print("🔍 FAQ Agent received state:", state)
 
-    query = state["query"].lower()
+    query = (state.query or "").lower()
 
     # Decide policy type
     if "return" in query or "refund" in query:
