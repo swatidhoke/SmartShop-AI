@@ -1,11 +1,20 @@
+from typing import Any
 from app.state.smartshop_state import SmartShopState
 
-def route_query(state: SmartShopState) -> dict:
+
+def route_query(state: Any) -> dict:
     """
     Determine which agents should handle the customer query.
+
+    Accepts either a SmartShopState instance or a plain dict (which will be
+    converted to SmartShopState). This keeps the router robust when invoked
+    indirectly by frameworks that pass dict-like state objects.
     """
 
-    query = state["query"].lower()
+    if isinstance(state, dict):
+        state = SmartShopState(**state)
+
+    query = (state.query or "").lower()
 
     selected_agents: list[str] = []
 
@@ -40,19 +49,19 @@ def route_query(state: SmartShopState) -> dict:
     ]
 
     faq_keywords = [
-    "return",
-    "refund",
-    "shipping",
-    "policy",
-    "exchange",
-    "delivery",
-    "warranty",
-    "repair",
-    "financing",
-    "finance",
-    "preorder",
-    "price match",
-]
+        "return",
+        "refund",
+        "shipping",
+        "policy",
+        "exchange",
+        "delivery",
+        "warranty",
+        "repair",
+        "financing",
+        "finance",
+        "preorder",
+        "price match",
+    ]
 
     if any(word in query for word in product_keywords):
         selected_agents.append("product_agent")

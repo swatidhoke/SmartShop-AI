@@ -1,3 +1,4 @@
+from typing import Any
 from langgraph.graph import END, START, StateGraph
 from app.agents.faq_agent import faq_agent
 from app.agents.price_agent import price_agent
@@ -6,15 +7,19 @@ from app.agents.review_agent import review_agent
 from app.agents.router import route_query
 from app.state.smartshop_state import SmartShopState
 
-def dispatch_agents(state: SmartShopState) -> dict:
+
+def dispatch_agents(state: Any) -> dict:
     """
     Execute only the agents selected by the router.
+
+    Accepts either a SmartShopState instance or a plain dict and converts the
+    latter into SmartShopState for consistent attribute access.
     """
 
-    selected_agents = state.get(
-        "selected_agents",
-        []
-    )
+    if isinstance(state, dict):
+        state = SmartShopState(**state)
+
+    selected_agents = state.selected_agents or []
 
     updates = {}
 
@@ -33,17 +38,20 @@ def dispatch_agents(state: SmartShopState) -> dict:
     return updates
 
 
-def combine_responses(state: SmartShopState) -> dict:
+def combine_responses(state: Any) -> dict:
     """
     Combine responses from selected agents.
     """
 
+    if isinstance(state, dict):
+        state = SmartShopState(**state)
+
     responses = []
 
-    product_response = state.get("product_response")
-    price_response = state.get("price_response")
-    review_response = state.get("review_response")
-    faq_response = state.get("faq_response")
+    product_response = state.product_response
+    price_response = state.price_response
+    review_response = state.review_response
+    faq_response = state.faq_response
 
     if product_response:
         responses.append(

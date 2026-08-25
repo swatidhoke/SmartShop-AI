@@ -1,3 +1,4 @@
+from typing import Any
 from langchain_core.messages import HumanMessage
 
 from app.config.config import llm
@@ -5,11 +6,15 @@ from app.database.db import get_connection
 from app.state.smartshop_state import SmartShopState
 
 
-def product_agent(state: SmartShopState) -> dict:
+def product_agent(state: Any) -> dict:
+
+    # Accept either a SmartShopState instance or a plain dict.
+    if isinstance(state, dict):
+        state = SmartShopState(**state)
 
     print("🛍️ Product Agent received state:", state)
 
-    query = state["query"]
+    query = state.query or ""
 
     # Read products from PostgreSQL
     with get_connection() as conn:
