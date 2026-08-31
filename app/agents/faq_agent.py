@@ -1,72 +1,97 @@
+import logging
+
 from langchain_core.messages import HumanMessage
 
 from app.config.config import llm
-from app.database.db import get_connection
+from app.database.retrieval import (
+    documents_to_context,
+    recent_conversation,
+    semantic_search,
+)
+from app.database.index_vector_stores import (
+    get_policies_vector_store,
+)
 from app.state.smartshop_state import SmartShopState
 
 
-def faq_agent(state: SmartShopState) -> dict:
+logger = logging.getLogger(__name__)
 
-    print("🔍 FAQ Agent received state:", state)
 
-    query = state["query"].lower()
+def faq_agent(
+    state: SmartShopState,
+) -> dict:
+    """
+    Answer store-policy questions using semantic search.
+    """
 
-    # Decide policy type
-    if "return" in query or "refund" in query:
-        policy_type = "returns"
+    query = state["query"]
+    messages = state.get("messages", [])
 
-    elif "warranty" in query:
-        policy_type = "warranty"
+    logger.info(
+        "FAQ Agent started | query=%s",
+        query[:100],
+    )
 
-    elif "shipping" in query or "delivery" in query:
-        policy_type = "shipping"
+    try:
+        policies_vector_store = (
+            get_policies_vector_store()
+        )
 
-    elif "exchange" in query:
-        policy_type = "exchanges"
+        policies = semantic_search(
+            policies_vector_store,
+            query,
+            k=2,
+        )
 
-    else:
+    except Exception:
+        logger.exception(
+            "FAQ Agent vector search failed"
+        )
+
         return {
-            "faq_response": "I could not find a matching store policy."
+            "faq_response":
+                "I could not search store policies."
         }
 
-    # Read from PostgreSQL
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
-
-            cursor.execute(
-                """
-                SELECT description, conditions, timeframe
-                FROM store_policies
-                WHERE policy_type = %s
-                """,
-                (policy_type,)
-            )
-
-            policies = cursor.fetchall()
-
-    # No database result
     if not policies:
         return {
-            "faq_response": "No matching policy was found."
+            "faq_response":
+                "I could not find a matching store policy."
         }
 
-    # Send database results to LLM
+    policy_context = documents_to_context(
+        policies
+    )
+
+    conversation_context = recent_conversation(
+        messages
+    )
+
     prompt = f"""
-You are the SmartShop FAQ Agent.
+You are the SmartShop Store Policy Agent.
 
 Customer question:
 {query}
 
-Store policies:
-{policies}
+Recent conversation:
+{conversation_context}
 
-Answer using ONLY these policies.
-Do not invent information.
-Keep the answer short and clear.
+Relevant store policies:
+{policy_context}
+
+Instructions:
+- Answer using ONLY the policies provided.
+- Do not invent information.
+- If the policies do not answer the question, say so.
+- Keep the answer short and clear.
 """
 
     response = llm.invoke(
         [HumanMessage(content=prompt)]
+    )
+
+    logger.info(
+        "FAQ Agent completed successfully"
     )
 
     return {

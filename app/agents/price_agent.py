@@ -1,58 +1,118 @@
+import logging
+
 from langchain_core.messages import HumanMessage
+
 from app.config.config import llm
 from app.database.db import get_connection
+from app.database.retrieval import recent_conversation
 from app.state.smartshop_state import SmartShopState
 
-def price_agent(state: SmartShopState) -> dict:
 
-    print("💰 Price Agent received state:", state)
+logger = logging.getLogger(__name__)
+
+
+def price_agent(
+    state: SmartShopState,
+) -> dict:
+    """
+    Compare product prices using structured PostgreSQL data.
+    """
 
     query = state["query"]
+    messages = state.get("messages", [])
 
-    # Read products from PostgreSQL
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
+    logger.info(
+        "Price Agent started | query=%s",
+        query[:100],
+    )
 
-            cursor.execute(
-                """
-                SELECT id, name, brand, category,
-                       price, stock, rating
-                FROM products
-                LIMIT 50
-                """
-            )
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cursor:
 
-            products = cursor.fetchall()
+                cursor.execute(
+                    """
+                    SELECT
+                        id,
+                        name,
+                        brand,
+                        category,
+                        price,
+                        rating,
+                        stock
+                    FROM products
+                    WHERE stock > 0
+                    ORDER BY price ASC
+                    """
+                )
 
-    if not products:
+                products = cursor.fetchall()
+
+    except Exception:
+        logger.exception(
+            "Price Agent database query failed"
+        )
+
         return {
-            "price_response": "No product pricing information was found."
+            "price_response":
+                "I could not retrieve current product prices."
         }
 
-    # Send database results to LLM
+    if not products:
+        logger.warning(
+            "Price Agent found no products"
+        )
+
+        return {
+            "price_response":
+                "No products are currently available for comparison."
+        }
+
+    conversation_context = recent_conversation(
+        messages
+    )
+
     prompt = f"""
 You are the Price Comparison Agent for SmartShop AI.
 
 Customer question:
 {query}
 
-Available products from PostgreSQL:
+Recent conversation:
+{conversation_context}
+
+Available products:
 {products}
 
 Instructions:
-- Compare only products from the data above.
-- Respect the customer's budget when provided.
-- Identify cheaper and more expensive options.
-- Do not invent prices.
-- Mention product name, brand and price.
-- Explain which product offers better value.
-- Keep the response short and clear.
+- Compare only the products shown above.
+- Use the exact prices provided.
+- Respect the customer's budget.
+- Identify cheaper alternatives when appropriate.
+- Consider rating when discussing value.
+- Do not invent prices or products.
+- Keep the response concise.
 """
 
-    response = llm.invoke(
-        [HumanMessage(content=prompt)]
-    )
+    try:
+        response = llm.invoke(
+            [HumanMessage(content=prompt)]
+        )
 
-    return {
-        "price_response": response.content
-    }
+        logger.info(
+            "Price Agent completed successfully"
+        )
+
+        return {
+            "price_response": response.content
+        }
+
+    except Exception:
+        logger.exception(
+            "Price Agent LLM call failed"
+        )
+
+        return {
+            "price_response":
+                "I retrieved the prices but could not generate a comparison."
+        }

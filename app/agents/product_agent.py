@@ -1,59 +1,115 @@
+import logging
+
 from langchain_core.messages import HumanMessage
 
 from app.config.config import llm
-from app.database.db import get_connection
+from app.database.retrieval import (
+    documents_to_context,
+    recent_conversation,
+    semantic_search,
+)
+from app.database.index_vector_stores import (
+    get_products_vector_store,
+)
 from app.state.smartshop_state import SmartShopState
 
 
-def product_agent(state: SmartShopState) -> dict:
+logger = logging.getLogger(__name__)
 
-    print("🛍️ Product Agent received state:", state)
+
+def product_agent(
+    state: SmartShopState,
+) -> dict:
+    """
+    Recommend products using semantic product search.
+    """
 
     query = state["query"]
+    messages = state.get("messages", [])
 
-    # Read products from PostgreSQL
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
+    logger.info(
+        "Product Agent started | query=%s",
+        query[:100],
+    )
 
-            cursor.execute(
-                """
-                SELECT id, name, brand, category,
-                       price, description, stock, rating
-                FROM products
-                LIMIT 50
-                """
-            )
+    try:
+        products_vector_store = (
+            get_products_vector_store()
+        )
 
-            products = cursor.fetchall()
+        products = semantic_search(
+            products_vector_store,
+            query,
+            k=5,
+        )
 
-    if not products:
+    except Exception:
+        logger.exception(
+            "Product Agent vector search failed"
+        )
+
         return {
-            "product_response": "No products were found."
+            "product_response":
+                "I could not search the product catalog."
         }
 
-    # Send database results to LLM
+    if not products:
+        logger.warning(
+            "Product Agent found no products"
+        )
+
+        return {
+            "product_response":
+                "I could not find a matching product."
+        }
+
+    product_context = documents_to_context(
+        products
+    )
+
+    conversation_context = recent_conversation(
+        messages
+    )
+
     prompt = f"""
 You are the Product Recommendation Agent for SmartShop AI.
 
 Customer question:
 {query}
 
-Products from PostgreSQL:
-{products}
+Recent conversation:
+{conversation_context}
+
+Relevant products:
+{product_context}
 
 Instructions:
-- Recommend only products from the data above.
-- Do not invent products.
-- Recommend the most relevant products.
-- Mention product name, brand, category and price.
-- Consider rating and stock when useful.
-- Keep the answer short and customer friendly.
+- Recommend only products shown above.
+- Do not invent products, prices, ratings, or features.
+- Explain briefly why each recommendation fits.
+- Respect requirements mentioned earlier in the conversation.
+- Keep the response clear and concise.
 """
 
-    response = llm.invoke(
-        [HumanMessage(content=prompt)]
-    )
+    try:
+        response = llm.invoke(
+            [HumanMessage(content=prompt)]
+        )
 
-    return {
-        "product_response": response.content
-    }
+        logger.info(
+            "Product Agent completed successfully"
+        )
+
+        return {
+            "product_response": response.content
+        }
+
+    except Exception:
+        logger.exception(
+            "Product Agent LLM call failed"
+        )
+
+        return {
+            "product_response":
+                "I found matching products but could not generate a recommendation."
+        }

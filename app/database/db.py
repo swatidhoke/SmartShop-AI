@@ -1,12 +1,11 @@
-import os
-import psycopg
-from dotenv import load_dotenv
-from psycopg.rows import dict_row
+from app.database.db import get_connection
 
-load_dotenv()
+def test_connection():
+    """Verify the app can open a connection to PostgreSQL."""
 
-def get_connection():
-    return psycopg.connect(
-        os.getenv("DATABASE_URL"),
-        row_factory=dict_row
-    )
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT current_database();")
+            row = cursor.fetchone()
+
+            assert row is not None

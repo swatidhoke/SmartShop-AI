@@ -1,17 +1,12 @@
 import os
-
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
-
-
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 load_dotenv()
-
 
 def get_llm() -> ChatOpenAI:
     """
     Create and return the LLM used by SmartShop agents.
     """
-
     if not os.getenv("OPENAI_API_KEY"):
         raise ValueError(
             "OPENAI_API_KEY is not configured. "
@@ -24,3 +19,7 @@ def get_llm() -> ChatOpenAI:
     )
 
 llm = get_llm()
+
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small"
+)
