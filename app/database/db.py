@@ -1,11 +1,35 @@
-from app.database.db import get_connection
+"""
+Database connection helper for SmartShop AI.
 
-def test_connection():
-    """Verify the app can open a connection to PostgreSQL."""
+This module creates PostgreSQL database connections.
+Other modules import get_connection() from here.
+"""
 
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT current_database();")
-            row = cursor.fetchone()
+import os
 
-            assert row is not None
+import psycopg
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+
+def get_connection():
+    """
+    Create and return a PostgreSQL database connection.
+
+    DATABASE_URL should be stored in the .env file.
+
+    Example:
+        DATABASE_URL=postgresql://postgres:password@host:5432/smartshop
+    """
+
+    database_url = os.getenv("DATABASE_URL")
+
+    if not database_url:
+        raise ValueError(
+            "DATABASE_URL is not configured. "
+            "Add it to your .env file."
+        )
+
+    return psycopg.connect(database_url)
