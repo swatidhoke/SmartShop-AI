@@ -10,7 +10,9 @@ from dotenv import load_dotenv
 # --------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
+
 load_dotenv(PROJECT_ROOT / ".env")
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # --------------------------------------------------
@@ -54,9 +56,7 @@ def create_tables(conn):
         """)
 
     conn.commit()
-
     print("✅ Tables created")
-
 
 # --------------------------------------------------
 # Load Products
@@ -100,11 +100,8 @@ def load_products(conn):
                         row["rating"]
                     )
                 )
-
     conn.commit()
-
     print("✅ Products loaded")
-
 
 # --------------------------------------------------
 # Load Reviews

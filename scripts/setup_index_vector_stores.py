@@ -1,7 +1,9 @@
 import logging
 import os
 import uuid
+import asyncio
 from decimal import Decimal
+from psycopg.rows import dict_row
 
 from dotenv import load_dotenv
 from langchain_core.documents import Document
@@ -22,7 +24,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-
 
 # ---------------------------------------------------------
 # Vector store configuration
@@ -156,7 +157,7 @@ def load_products() -> list[Document]:
     logger.info("Loading products from PostgreSQL")
 
     with get_connection() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """
                 SELECT
@@ -225,7 +226,7 @@ def load_reviews() -> list[Document]:
     logger.info("Loading reviews from PostgreSQL")
 
     with get_connection() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """
                 SELECT
@@ -295,7 +296,7 @@ def load_policies() -> list[Document]:
     logger.info("Loading store policies from PostgreSQL")
 
     with get_connection() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """
                 SELECT
@@ -460,7 +461,7 @@ def create_all_vector_stores() -> None:
         )
 
     finally:
-        pg_engine.close()
+        asyncio.run(pg_engine.close())
 
 if __name__ == "__main__":
     create_all_vector_stores()
